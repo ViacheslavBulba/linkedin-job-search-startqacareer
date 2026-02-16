@@ -47,33 +47,3 @@ test(`linkedin - search jobs - ${datePostedFilter}`, async ({ page }) => { // 2-
   await linkedInOpenEachPosition(jobsFromAllPagesWithFilteredNames, Job_Descriptions_QA_Stop_Words, JDPartsToInclude);
   printOutFinalResults(jobsFromAllPagesWithFilteredNames);
 });
-//   process.fileName = getDateAndTime() + "_dice_.txt";
-//   await page.goto('https://www.dice.com/');
-//   await page.waitForTimeout(5000);
-//   await clickOnText("Don't show this message again");
-//   //await clickOnText("Ok");
-//   await page.getByRole('button', { name: 'Ok' }).click(); // accept cookies
-
-//   await diceEnterPosition(JobNamesToSearch[0]);
-
-//   // FILTER CHECKBOXES ON THE LEFT
-//   await clickOnText("Remote Only");
-//   await page.waitForTimeout(5000);
-//   await page.locator('//*[@data-cy-value="FULLTIME"]').click();
-//   await page.waitForTimeout(5000);
-//   await page.locator('//*[@data-cy-value="CONTRACTS"]').click();
-//   await page.waitForTimeout(5000);
-
-//   // await clickOnText("Last 7 Days");
-//   // await page.waitForTimeout(5000);
-
-//   const jobsFromAllPagesWithFilteredNames = new Set();
-//   await diceCollectJobsAfterFiltersApplied(jobsFromAllPagesWithFilteredNames, pageLimitToSearch, Job_Names_QA_Stop_Words, JobNamePartsToInclude);
-//   for (let i = 1; i < JobNamesToSearch.length; i++) {
-//     await diceEnterPosition(JobNamesToSearch[i], page);
-//     await diceCollectJobsAfterFiltersApplied(jobsFromAllPagesWithFilteredNames, pageLimitToSearch, Job_Names_QA_Stop_Words, JobNamePartsToInclude);
-//   }
-//   await diceOpenEachPosition(jobsFromAllPagesWithFilteredNames, Job_Descriptions_QA_Stop_Words);
-
-//   printOutFinalResults(jobsFromAllPagesWithFilteredNames);
-// });
