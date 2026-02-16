@@ -22,9 +22,7 @@ test.afterEach(async ({ page, context, request }, testInfo) => {
     console.log('URL at the moment of failure = ' + page.url());
     console.log('');
   }
-  if (testInfo.status === 'passed') {
-    await page.close();
-  }
+  await page.close();
 });
 
 test(`linkedin - search jobs - ${datePostedFilter}`, async ({ page }) => { // 2-3h
