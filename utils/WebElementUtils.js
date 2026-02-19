@@ -225,3 +225,8 @@ export async function getAllElementsWithOrWithoutIFrame(iframeLocator, locator) 
     return await page.frameLocator(iframeLocator).locator(locator).all();
   }
 }
+
+export async function waitSeconds(seconds) {
+  const page = process.playwrightPage;
+  await page.waitForTimeout(seconds * 1000);
+}

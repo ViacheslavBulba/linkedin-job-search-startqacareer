@@ -29,12 +29,13 @@ test(`linkedin - search jobs - ${datePostedFilter}`, async ({ page }) => { // 2-
   process.fileName = getDateAndTime() + "_linkedin_.txt";
   restrictContractPositions();
   await linkedInLogin();
-  await linkedInEnterPosition(JobNamesToSearch[0]);
+  await linkedInEnterPosition(JobNamesToSearch[0]); // any job to see needed elements
   if (!FIND_REMOTE_ONLY) {
     await linkedInEnterLocation(LOCATION);
   } else {
     await linkedInEnterLocation("United States");
   }
+  await linkedInEnterPosition(JobNamesToSearch[0]); // got cleared, enter again
   await linkedInSetUpFilters(datePostedFilter);
   const jobsFromAllPagesWithFilteredNames = new Set();
   await linkedInCollectJobsAfterFiltersApplied(jobsFromAllPagesWithFilteredNames, pageLimitToSearch, Job_Names_QA_Stop_Words, JobNamePartsToInclude);

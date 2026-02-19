@@ -81,7 +81,7 @@ export function restrictContractPositions() {
   }
 }
 
-const locatorJobNameInput = `//*[@aria-label="Search by title, skill, or company" or @placeholder="Title, skill or Company"][1]`;
+const locatorJobNameInput = `//*[@aria-label="Search by title, skill, or company" or @placeholder="Title, skill or Company" or @placeholder="Search"][1]`;
 const locatorJobLocationInput = '//*[@aria-label="City, state, or zip code"][1]';
 export const linkedinFiltersIFrame = '//iframe[@data-testid="interop-iframe"]';
 
@@ -113,8 +113,18 @@ export async function linkedInEnterPosition(text) {
 }
 
 export async function linkedInEnterLocation(text) {
-  printToFileAndConsole(`enter location: ${text}`);
+  printToFileAndConsole(`ENTER LOCATION: ${text}`);
   const page = process.playwrightPage;
+
+  if (!await isElementPresentWithIFrameRetry(locatorJobLocationInput)) {
+    await clickWithRetryInIframe('//button[text()="Jobs"]');
+    await waitSeconds(5);
+    await clickWithRetryInIframe('//*[text()="AI-powered search is in beta"]');
+    await waitSeconds(1);
+    await clickWithRetryInIframe('//*[text()="Switch back to classic job search"]');
+    await waitSeconds(5);
+  }
+
   await fillWithRetryInIframe(locatorJobLocationInput, text);
   await page.waitForTimeout(1000);
   await page.keyboard.press('Enter');
@@ -210,6 +220,7 @@ export async function linkedInLoginWithUserPassword(username, password) {
   await clickOnElementIfPresent('//*[text()="Maybe later"]');
   await page.waitForTimeout(2000);
   await clickOnElementIfPresent('[role="dialog"] button[aria-label="Dismiss"]');
+  console.log(`click on Jobs after login`);
   await page.locator('//*[@title="Jobs"]').click();
   await page.waitForTimeout(2000);
 }
