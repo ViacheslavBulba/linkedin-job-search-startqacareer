@@ -119,7 +119,8 @@ export async function clickOnText(text) {
 
 export async function clickOnElement(locator) {
   const page = process.playwrightPage;
-  await page.locator(locator).first().click({ force: true, position: { x: 1, y: 1 } });
+  // await page.locator(locator).first().click({ force: true, position: { x: 1, y: 1 } });
+  await page.locator(locator).first().click();
 }
 
 export async function clickOnElementIfPresent(locator) {
