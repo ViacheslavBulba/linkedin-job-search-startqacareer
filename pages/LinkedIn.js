@@ -207,8 +207,16 @@ export async function linkedInLoginWithUserPassword(username, password) {
     await page.waitForTimeout(5000);
   }
   await page.waitForTimeout(5000);
-  await page.locator('//*[@autocomplete="username" or @id="username"]').fill(username);
-  await page.locator('//*[@autocomplete="current-password"]').fill(password);
+  let locatorUsername = '//*[@autocomplete="username" or @id="username"]';
+  if (!await isElementPresent(locatorUsername)) {
+    console.log(`username locator 1 is not found`);
+    locatorUsername = '//*[text()="Email or phone"]/following::input[1]';
+    await page.locator(locatorUsername).last().fill(username);
+    await page.locator('//*[@autocomplete="current-password"]').last().fill(password);
+  } else {
+    await page.locator(locatorUsername).fill(username);
+    await page.locator('//*[@autocomplete="current-password"]').fill(password);
+  }
   const locatorSignInButton1 = '//button[@type="submit"][contains(text(),"Sign in")]';
   const locatorSignInButton2 = '//button[contains(text(),"Sign in")]';
   if (await getNumberOfElements(locatorSignInButton1) > 0) {
