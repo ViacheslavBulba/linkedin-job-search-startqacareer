@@ -219,10 +219,13 @@ export async function linkedInLoginWithUserPassword(username, password) {
   }
   const locatorSignInButton1 = '//button[@type="submit"][contains(text(),"Sign in")]';
   const locatorSignInButton2 = '//button[contains(text(),"Sign in")]';
+  const locatorSignInButton3 = '//span[contains(text(),"Sign in")]';
   if (await getNumberOfElements(locatorSignInButton1) > 0) {
     await page.locator(locatorSignInButton1).click();
-  } else {
+  } else if (await getNumberOfElements(locatorSignInButton2) > 0) {
     await page.locator(locatorSignInButton2).first().click();
+  } else {
+    await page.locator(locatorSignInButton3).last().click();
   }
   await page.waitForTimeout(10000);
   await clickOnElementIfPresent('//*[text()="Maybe later"]');
