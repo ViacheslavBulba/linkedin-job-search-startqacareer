@@ -232,7 +232,7 @@ export async function linkedInLoginWithUserPassword(username, password) {
   await page.waitForTimeout(2000);
   await clickOnElementIfPresent('[role="dialog"] button[aria-label="Dismiss"]');
   console.log(`click on Jobs after login`);
-  await page.locator('//*[@title="Jobs"]').click();
+  await clickWithRetryInIframe('//*[@title="Jobs"]');
   await page.waitForTimeout(2000);
 }
 
