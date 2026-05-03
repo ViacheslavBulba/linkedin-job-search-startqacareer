@@ -208,7 +208,7 @@ export async function linkedInLoginWithUserPassword(username, password) {
   }
   await page.waitForTimeout(5000);
   let locatorUsername = '//*[@autocomplete="username" or @id="username"]';
-  if (!await isElementPresent(locatorUsername)) {
+  if (!await isElementDisplayed(locatorUsername)) {
     console.log(`username locator 1 is not found`);
     locatorUsername = '//*[text()="Email or phone"]/following::input[1]';
     await page.locator(locatorUsername).last().fill(username);
