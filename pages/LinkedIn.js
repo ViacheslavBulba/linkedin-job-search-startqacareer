@@ -455,15 +455,15 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
     // '.artdeco-entity-lockup__caption > ul > li',
     '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__caption")]//ul/li'
   ];
-  const locatorJobNames = await getLocatorFromFew(locatorsJobNames);
-  const locatorJobCompanies = await getLocatorFromFew(locatorsJobCompanies);
-  const locatorJobLocations = await getLocatorFromFew(locatorsJobLocations);
   if (await getNumberOfElements('//*[text()="No matching jobs found."]') > 0) {
     printToFileAndConsole('');
     printToFileAndConsole('No matching jobs found.');
     printToFileAndConsole('');
     return unfilteredJobsOnOnePage;
   }
+  const locatorJobNames = await getLocatorFromFew(locatorsJobNames);
+  const locatorJobCompanies = await getLocatorFromFew(locatorsJobCompanies);
+  const locatorJobLocations = await getLocatorFromFew(locatorsJobLocations);
   try {
     if (await page.locator(locatorJobNames).count() > 0) {
       await page.locator(locatorJobNames).first().hover();

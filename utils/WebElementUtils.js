@@ -203,6 +203,10 @@ export async function getLocatorFromFew(locators) {
     console.log(`No matching jobs found.`);
     return;
   }
+  if (await isElementPresent('//*[text()="No matching jobs found."]')) {
+    console.log(`No matching jobs found.`);
+    return;
+  }
   for (let i = 0; i < locators.length; i++) {
     if (await page.locator(locators[i]).count() > 0) {
       return locators[i];
