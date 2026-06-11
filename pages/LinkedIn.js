@@ -84,6 +84,7 @@ export function restrictContractPositions() {
 const locatorJobNameInput = `//*[@aria-label="Search by title, skill, or company" or @placeholder="Title, skill or Company" or @placeholder="Search"][1]`;
 const locatorJobLocationInput = '//*[@aria-label="City, state, or zip code"][1]';
 export const linkedinFiltersIFrame = '//iframe[@data-testid="interop-iframe"]';
+const locatorNoMatchingJobsFound = '//*[text()="No matching jobs found."]';
 
 export async function linkedInEnterPosition(text) {
   const page = process.playwrightPage;
@@ -387,6 +388,13 @@ export async function openPageWithRetry(link) {
   return pageOpenSuccess;
 }
 
+export async function isNoJobsFoundLinkedIn() {
+  if (await isElementPresentWithIFrameRetry(locatorNoMatchingJobsFound)) {
+    console.log(`No matching jobs found.`);
+    return true;
+  }
+}
+
 export async function linkedInGetJobDescription(jobLink) {
   const page = process.playwrightPage;
   const locatorJobDescriptionOnJobPage = '//*[contains(@class,"jobs-description__content") or contains(@data-sdui-component,"aboutTheJob")]';
@@ -455,10 +463,7 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
     // '.artdeco-entity-lockup__caption > ul > li',
     '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__caption")]//ul/li'
   ];
-  if (await getNumberOfElements('//*[text()="No matching jobs found."]') > 0) {
-    printToFileAndConsole('');
-    printToFileAndConsole('No matching jobs found.');
-    printToFileAndConsole('');
+  if (await isNoJobsFoundLinkedIn()) {
     return unfilteredJobsOnOnePage;
   }
   const locatorJobNames = await getLocatorFromFew(locatorsJobNames);
@@ -626,9 +631,10 @@ export async function linkedInCollectJobsAfterFiltersApplied(jobsFromAllPagesWit
         //printToFileAndConsole("MORE THAN " + pageLimitToSearch + " PAGES, STOP SEARCH");
         continueSearch = false; // maybe not needed as return used
       } else {
-        printToFileAndConsole("opening page - " + pageCount);
         printToFileAndConsole('');
-        printToFileAndConsole(`Time stamp to see if got stuck: ${(new Date()).toLocaleString()}`);
+        printToFileAndConsole(`Still running: ${(new Date()).toLocaleString()}`);
+        printToFileAndConsole('');
+        printToFileAndConsole("opening page - " + pageCount);
         printToFileAndConsole('');
         try {
           await clickWithRetryInIframe(`//*[@aria-label='Page ${pageCount}']`);

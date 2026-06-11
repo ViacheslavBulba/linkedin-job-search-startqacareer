@@ -1,4 +1,4 @@
-import { linkedinFiltersIFrame } from '../pages/LinkedIn';
+import { isNoJobsFoundLinkedIn, linkedinFiltersIFrame } from '../pages/LinkedIn';
 import { printToFileAndConsole } from './FileUtils';
 
 const { expect } = require('@playwright/test');
@@ -199,14 +199,6 @@ export async function getLocatorFromFew(locators) {
   // console.log(`getLocatorFromFew:`);
   // console.log(locators);
   const page = process.playwrightPage;
-  if (await isElementPresent('.jobs-search-no-results-banner')) {
-    console.log(`No matching jobs found.`);
-    return;
-  }
-  if (await isElementPresent('//*[text()="No matching jobs found."]')) {
-    console.log(`No matching jobs found.`);
-    return;
-  }
   for (let i = 0; i < locators.length; i++) {
     if (await page.locator(locators[i]).count() > 0) {
       return locators[i];
@@ -218,6 +210,9 @@ export async function getLocatorFromFew(locators) {
         return locators[i];
       }
     }
+  }
+  if (await isNoJobsFoundLinkedIn()) {
+    return locators[0];
   }
   expect(0, `no elements found = ${locators}`).toBeGreaterThan(0);
 }
