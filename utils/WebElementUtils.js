@@ -126,10 +126,10 @@ export async function clickOnElement(locator) {
 export async function clickOnElementIfPresent(locator) {
   const page = process.playwrightPage;
   if (await isElementPresent(locator)) {
-    console.log(`element [${locator}] is present, click on it`);
+    printToFileAndConsole(`element [${locator}] is present, click on it`);
     await clickOnElement(locator);
   } else {
-    console.log(`element [${locator}] is not present`);
+    printToFileAndConsole(`element [${locator}] is not present`);
   }
 }
 

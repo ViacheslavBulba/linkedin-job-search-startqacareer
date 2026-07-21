@@ -232,6 +232,10 @@ export async function linkedInLoginWithUserPassword(username, password) {
   await clickOnElementIfPresent('//*[text()="Maybe later"]');
   await page.waitForTimeout(2000);
   await clickOnElementIfPresent('[role="dialog"] button[aria-label="Dismiss"]');
+  await page.waitForTimeout(5000);
+  printToFileAndConsole(`checking banner - Your next role is closer than you think`);
+  await clickOnElementIfPresent('//dialog[@data-testid="dialog"]/button[@aria-label="Dismiss"]');
+  await page.waitForTimeout(1000);
   console.log(`click on Jobs after login`);
   await clickWithRetryInIframe('//*[@title="Jobs"]');
   await page.waitForTimeout(2000);
