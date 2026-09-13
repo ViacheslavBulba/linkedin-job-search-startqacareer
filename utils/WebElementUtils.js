@@ -133,6 +133,19 @@ export async function clickOnElementIfPresent(locator) {
   }
 }
 
+export async function clickOnNthElement(locator, index) {
+  const page = process.playwrightPage;
+  const elements = await page.locator(locator).all();
+  let i = 0;
+  for (let el of elements) {
+    if (i === index) {
+      await el.click({ force: true });
+      break;
+    }
+    i++;
+  }
+}
+
 export async function clickOnFirstVisibleElement(locator) {
   console.log(`click on first visible lement "${locator}"`);
   const page = process.playwrightPage;

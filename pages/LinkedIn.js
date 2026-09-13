@@ -4,7 +4,7 @@ import { FIND_REMOTE_ONLY, JOB_LOCATION_TYPES, JOB_TYPES, password, username } f
 import { excludeByJDStopWords } from "../utils/BasePage";
 import { printToFileAndConsole } from "../utils/FileUtils";
 import { isAlreadyIncluded, textIncludesWords, whichStopWordFound } from "../utils/StringUtils";
-import { clickOnElementIfPresent, getAllElementsWithOrWithoutIFrame, getLocatorFromFew, getNumberOfElements, getTextFromElement, isElementDisplayed, isElementPresent, isElementPresentWithIFrameRetry, scrollUp } from "../utils/WebElementUtils";
+import { clickOnElement, clickOnElementIfPresent, clickOnNthElement, getAllElementsWithOrWithoutIFrame, getLocatorFromFew, getNumberOfElements, getTextFromElement, isElementDisplayed, isElementPresent, isElementPresentWithIFrameRetry, scrollUp, waitSeconds } from "../utils/WebElementUtils";
 
 export function restrictContractPositions() {
   if (!JOB_TYPES.includes("Contract")) {
@@ -81,7 +81,7 @@ export function restrictContractPositions() {
   }
 }
 
-const locatorJobNameInput = `//*[@aria-label="Search by title, skill, or company" or @placeholder="Title, skill or Company" or @placeholder="Search"][1]`;
+const locatorJobNameInput = `//*[@aria-label="Search by title, skill, or company" or @placeholder="Title, skill or Company" or @placeholder="Search" or @placeholder="Describe the job you want"][1]`;
 const locatorJobLocationInput = '//*[@aria-label="City, state, or zip code"][1]';
 export const linkedinFiltersIFrame = '//iframe[@data-testid="interop-iframe"]';
 const locatorNoMatchingJobsFound = '//*[text()="No matching jobs found."]';
@@ -126,10 +126,21 @@ export async function linkedInEnterLocation(text) {
     await waitSeconds(5);
   }
 
-  await fillWithRetryInIframe(locatorJobLocationInput, text);
-  await page.waitForTimeout(1000);
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(5000);
+  if (await isElementPresentWithIFrameRetry(locatorJobLocationInput)) {
+    await fillWithRetryInIframe(locatorJobLocationInput, text);
+    await page.waitForTimeout(1000);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(5000);
+  } else {
+    await clickOnElement('//*[contains(@aria-label,"Location")]');
+    await waitSeconds(1);
+    await clickOnNthElement('//*[@id="clear-small"]', 1);
+    await waitSeconds(1);
+    await fillWithRetryInIframe('//*[@aria-label="Location"]', text);
+    await page.waitForTimeout(1000);
+    await clickOnElement('//*[@componentkey="semanticSearchBoxLocationList"]//a[1]');
+    await page.waitForTimeout(5000);
+  }
 }
 
 export async function linkedInSearchPositionInRemote(jobName) {
@@ -248,7 +259,7 @@ export async function linkedInLogin() {
 export async function clickOnShowResultsButtonInsideUpperFilter() {
   printToFileAndConsole('click on show results');
   const page = process.playwrightPage;
-  const locatorShowResultsButtons = '//button[@data-control-name="filter_show_results" or contains(@aria-label,"Apply current filter to show")]'; // text is changing, like show n results
+  const locatorShowResultsButtons = '//*[@data-control-name="filter_show_results" or contains(@aria-label,"Apply current filter to show") or text()="Show results"]'; // text is changing, like show n results
   await clickWithRetryInIframe(locatorShowResultsButtons);
   await page.waitForTimeout(5000);
 }
@@ -269,9 +280,9 @@ async function clickWithRetryInIframe(locator) {
     const elements = await page.frameLocator(linkedinFiltersIFrame).locator(locator).all();
     if (elements.length === 0) {
       // throw new Error(`Cannot find [${locator}]`);
-      printToFileAndConsole(``);
+      // printToFileAndConsole(``);
       printToFileAndConsole(`CANNOT FIND LOCATOR WITHOUT OR WITH IFRAME - [${locator}]`);
-      printToFileAndConsole(``);
+      // printToFileAndConsole(``);
     }
     for (let el of elements) {
       const visibility = await el.isVisible();
@@ -298,6 +309,7 @@ export async function linkedInSetUpFilters(linkedinDatePostedFilter) {
   await clickWithRetryInIframe('//*[text()="All filters"]');
   await page.waitForTimeout(5000);
   // set up job types
+  printToFileAndConsole('SET UP JOB TYPES');
   for (let i = 0; i < JOB_TYPES.length; i++) {
     printToFileAndConsole(`set up job type checkbox = [${JOB_TYPES[i]}]`);
     await clickWithRetryInIframe(`//h3[text()="Job type"]/..//label//*[text()="${JOB_TYPES[i]}"]`);
@@ -455,17 +467,23 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
   const locatorsJobNames = [
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//*[@data-view-name="job-card"]//*[contains(@class,"artdeco-entity-lockup__title")]/a//strong', // '//ul[@class="scaffold-layout__list-container"]//a[contains(@class,"job-card-container__link")]//strong'; // text // ".artdeco-entity-lockup__title a.job-card-container__link";
     'a.job-card-container__link strong',
+    '//*[@role="button"]//div[1]/p[1]/span[2]', // 08/14/2026
   ];
   const locatorsJobCompanies = [
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//*[@data-view-name="job-card"]//*[contains(@class,"artdeco-entity-lockup__subtitle")]', // '//ul[@class="scaffold-layout__list-container"]//*[contains(@class,"job-card-container__primary-description")]';
     // '.artdeco-entity-lockup__subtitle > span',
-    '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__subtitle")]/span[1]'
+    '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__subtitle")]/span[1]',
+    '//*[@role="button"]//div[1]/p[1]/span[2]/following::p[1]', // 08/14/2026
   ];
-  const locatorJobLinks = '//li[not(contains(@class,"discovery-templates-entity-item"))]//a[contains(@class,"job-card-container__link")]'; //'//ul[@class="scaffold-layout__list-container"]//a[contains(@class,"job-card-container__link")]'; // href
+  const locatorsJobLinks = [
+    '//li[not(contains(@class,"discovery-templates-entity-item"))]//a[contains(@class,"job-card-container__link")]',
+    '//*[contains(@componentkey,"job-card-component-ref") and @role="button"]',
+  ];
   const locatorsJobLocations = [
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//*[@data-view-name="job-card"]//*[contains(@class,"artdeco-entity-lockup__caption")]', // '//ul[@class="scaffold-layout__list-container"]//*[@data-view-name="job-card"]/div[1]/div[1]/div[2]/div[3]/ul[1]/li[1]';
     // '.artdeco-entity-lockup__caption > ul > li',
-    '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__caption")]//ul/li'
+    '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__caption")]//ul/li',
+    '//*[@role="button"]//div[1]/p[1]/span[2]/following::p[2]', // 08/14/2026
   ];
   if (await isNoJobsFoundLinkedIn()) {
     return unfilteredJobsOnOnePage;
@@ -473,6 +491,7 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
   const locatorJobNames = await getLocatorFromFew(locatorsJobNames);
   const locatorJobCompanies = await getLocatorFromFew(locatorsJobCompanies);
   const locatorJobLocations = await getLocatorFromFew(locatorsJobLocations);
+  const locatorJobLinks = await getLocatorFromFew(locatorsJobLinks);
   try {
     if (await page.locator(locatorJobNames).count() > 0) {
       await page.locator(locatorJobNames).first().hover();
@@ -499,16 +518,26 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
   printToFileAndConsole('COLLECTING JOB LINKS');
   const jobLinksElements = await getAllElementsWithOrWithoutIFrame(linkedinFiltersIFrame, locatorJobLinks);
   for (let el of jobLinksElements) {
-    const href = await el.getAttribute('href');
-    let shortUrl = href.substring(0, href.indexOf("?eBP="));
-    if (shortUrl === '') {
-      if (href.includes('?currentJobId=') && href.includes('&eBP=')) {
-        const jobId = href.substring(href.indexOf("?currentJobId=") + 14, href.indexOf("&eBP="));
-        shortUrl = `/jobs/view/${jobId}/`;
-      } else {
-        shortUrl = href;
+    let shortUrl = '';
+    if (locatorJobLinks.includes('job-card-component-ref')) {
+      // componentkey="job-card-component-ref-4449667671"
+      const componentkey = await el.getAttribute('componentkey');
+      const jobId = componentkey.replace('job-card-component-ref-', '');
+      shortUrl = `/jobs/view/${jobId}/`;
+    } else {
+      const href = await el.getAttribute('href');
+      // console.log(`href = [${href}]`);
+      shortUrl = href.substring(0, href.indexOf("?eBP="));
+      if (shortUrl === '') {
+        if (href.includes('?currentJobId=') && href.includes('&eBP=')) {
+          const jobId = href.substring(href.indexOf("?currentJobId=") + 14, href.indexOf("&eBP="));
+          shortUrl = `/jobs/view/${jobId}/`;
+        } else {
+          shortUrl = href;
+        }
       }
     }
+    console.log(`jobLink = [https://www.linkedin.com${shortUrl}]`);
     jobLinks.push(`https://www.linkedin.com${shortUrl}`);
   }
   printToFileAndConsole('COLLECTING COMPANY NAMES');
