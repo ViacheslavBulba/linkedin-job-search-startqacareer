@@ -4,7 +4,7 @@ import { FIND_REMOTE_ONLY, JOB_LOCATION_TYPES, JOB_TYPES, password, username } f
 import { excludeByJDStopWords } from "../utils/BasePage";
 import { printToFileAndConsole } from "../utils/FileUtils";
 import { isAlreadyIncluded, textIncludesWords, whichStopWordFound } from "../utils/StringUtils";
-import { clickOnElement, clickOnElementIfPresent, clickOnNthElement, getAllElementsWithOrWithoutIFrame, getLocatorFromFew, getNumberOfElements, getTextFromElement, isElementDisplayed, isElementPresent, isElementPresentWithIFrameRetry, scrollUp, waitSeconds } from "../utils/WebElementUtils";
+import { clickOnElement, clickOnElementIfPresent, clickOnFirstVisibleElement, clickOnNthElement, getAllElementsWithOrWithoutIFrame, getLocatorFromFew, getNumberOfElements, getTextFromElement, isElementDisplayed, isElementPresent, isElementPresentWithIFrameRetry, scrollUp, waitSeconds } from "../utils/WebElementUtils";
 
 export function restrictContractPositions() {
   if (!JOB_TYPES.includes("Contract")) {
@@ -84,7 +84,7 @@ export function restrictContractPositions() {
 const locatorJobNameInput = `//*[@aria-label="Search by title, skill, or company" or @placeholder="Title, skill or Company" or @placeholder="Search" or @placeholder="Describe the job you want"][1]`;
 const locatorJobLocationInput = '//*[@aria-label="City, state, or zip code"][1]';
 export const linkedinFiltersIFrame = '//iframe[@data-testid="interop-iframe"]';
-const locatorNoMatchingJobsFound = '//*[text()="No matching jobs found."]';
+const locatorNoMatchingJobsFound = '//*[text()="No matching jobs found." or text()="No results found"]';
 
 export async function linkedInEnterPosition(text) {
   const page = process.playwrightPage;
@@ -95,7 +95,10 @@ export async function linkedInEnterPosition(text) {
     await scrollUp(3000);
     await fillWithRetryInIframe(locatorJobNameInput, text);
     await page.waitForTimeout(3000);
-    await page.keyboard.press('Enter');
+    console.log(`press Enter`);
+    await page.locator(locatorJobNameInput).press('ArrowDown');
+    await page.locator(locatorJobNameInput).press('Enter');
+    // await page.keyboard.press('Enter');
     await page.waitForTimeout(5000);
   } catch (retry) {
     if (page.url().includes('/premium/survey/')) {
@@ -108,6 +111,7 @@ export async function linkedInEnterPosition(text) {
     await scrollUp(3000);
     await fillWithRetryInIframe(locatorJobNameInput, text);
     await page.waitForTimeout(3000);
+    console.log(`press Enter`);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(5000);
   }
@@ -218,6 +222,10 @@ export async function linkedInLoginWithUserPassword(username, password) {
     await page.locator(locatorPaywall4).click();
     await page.waitForTimeout(5000);
   }
+  if (await isElementDisplayed('//*[text()="Sign in with email"]')) {
+    printToFileAndConsole('Sign in with email');
+    await clickOnFirstVisibleElement('//*[text()="Sign in with email"]');
+  }
   await page.waitForTimeout(5000);
   let locatorUsername = '//*[@autocomplete="username" or @id="username"]';
   if (!await isElementDisplayed(locatorUsername)) {
@@ -315,11 +323,28 @@ export async function linkedInSetUpFilters(linkedinDatePostedFilter) {
     await clickWithRetryInIframe(`//h3[text()="Job type"]/..//label//*[text()="${JOB_TYPES[i]}"]`);
     await page.waitForTimeout(1500);
   }
+  // new AI UI
+  const locatorEmploymentTypeButton = '//label[text()="Employment type"]';
+  if (await isElementDisplayed(locatorEmploymentTypeButton)) {
+    await clickOnFirstVisibleElement(locatorEmploymentTypeButton);
+    for (let i = 0; i < JOB_TYPES.length; i++) {
+      printToFileAndConsole(`set up job type checkbox = [${JOB_TYPES[i]}]`);
+      await clickOnElement(`//*[@popover="manual"]//*[text()="${JOB_TYPES[i]}"]`);
+    }
+    await clickOnElement(`//*[text()="Show results"]`);
+    await page.waitForTimeout(5000);
+  }   // new AI UI
   // set up remote or not
   if (FIND_REMOTE_ONLY) {
     printToFileAndConsole(`set up job type checkbox = [Remote]`);
     await clickWithRetryInIframe(`//h3[text()="Remote"]/..//label//*[text()="Remote"]`);
     await page.waitForTimeout(1500);
+    // new AI UI
+    const locatorRemoteButton = '//label[text()="Remote"]'; // new AI UI
+    if (await isElementDisplayed(locatorRemoteButton)) {
+      await clickOnFirstVisibleElement(locatorRemoteButton);
+    }
+    await page.waitForTimeout(5000); // new AI UI
   } else {
     for (let i = 0; i < JOB_LOCATION_TYPES.length; i++) {
       printToFileAndConsole(`set up job type checkbox = [${JOB_LOCATION_TYPES[i]}]`);
@@ -339,6 +364,17 @@ export async function linkedInSetUpFilters(linkedinDatePostedFilter) {
     await page.waitForTimeout(3000);
     await clickOnShowResultsButtonInsideUpperFilter();
   }
+  // new AI UI
+  const locatorDatePostedButton = '//label[text()="Date posted"]'; // new AI UI
+  if (linkedinDatePostedFilter !== 'Any time' && await isElementDisplayed(locatorDatePostedButton)) { // new AI UI
+    await clickOnElement(locatorDatePostedButton);
+    await page.waitForTimeout(2000);
+    printToFileAndConsole(`set up date posted = ${linkedinDatePostedFilter}`);
+    await clickOnElement('//*[text()="' + linkedinDatePostedFilter + '"]');
+    await page.waitForTimeout(3000);
+    await clickOnElement(`//*[text()="Show results"]`);
+    await page.waitForTimeout(5000);
+  } // new AI UI
 }
 
 export async function linkedInSetUpOnSiteFilters(linkedinDatePostedFilter) {
@@ -414,6 +450,7 @@ export async function isNoJobsFoundLinkedIn() {
 export async function linkedInGetJobDescription(jobLink) {
   const page = process.playwrightPage;
   const locatorJobDescriptionOnJobPage = '//*[contains(@class,"jobs-description__content") or contains(@data-sdui-component,"aboutTheJob")]';
+  const locatorJobDescriptionOnJobPage2 = '//*[@data-testid="expandable-text-box"]';
   const locatorSalaryOnJobPage1 = '//li[contains(@class,"job-details-jobs-unified-top-card__job-insight")]';
   const locatorSalaryOnJobPage2 = '//*[contains(@class,"job-details-preferences-and-skills__pill")]//span[1]';
   const locatorSalaryOnJobPage3 = '//span[contains(text(),"/yr")]';
@@ -423,9 +460,14 @@ export async function linkedInGetJobDescription(jobLink) {
     return '';
   }
   await page.waitForTimeout(5000);
+  await clickOnElementIfPresent('//button//span[text()=" more"]'); // expand just in case
+  await page.waitForTimeout(1000);
   let jd = 'EMPTY JD';
   if (await getNumberOfElements(locatorJobDescriptionOnJobPage) > 0) {
     jd = await getTextFromElement(locatorJobDescriptionOnJobPage);
+  }
+  if (jd === 'EMPTY JD' && await getNumberOfElements(locatorJobDescriptionOnJobPage2) > 0) {
+    jd = await getTextFromElement(locatorJobDescriptionOnJobPage2);
   }
   let salary = await getTextFromElement(locatorSalaryOnJobPage2);
   if (salary === '') {
@@ -467,13 +509,15 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
   const locatorsJobNames = [
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//*[@data-view-name="job-card"]//*[contains(@class,"artdeco-entity-lockup__title")]/a//strong', // '//ul[@class="scaffold-layout__list-container"]//a[contains(@class,"job-card-container__link")]//strong'; // text // ".artdeco-entity-lockup__title a.job-card-container__link";
     'a.job-card-container__link strong',
-    '//*[@role="button"]//div[1]/p[1]/span[2]', // 08/14/2026
+    // '//*[@role="button"]//div[1]/p[1]/span[2][not(contains(text(),"ago"))]', // 08/14/2026 // 10/19/2026
+    '//div[@role="button"]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/p[1]',
   ];
   const locatorsJobCompanies = [
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//*[@data-view-name="job-card"]//*[contains(@class,"artdeco-entity-lockup__subtitle")]', // '//ul[@class="scaffold-layout__list-container"]//*[contains(@class,"job-card-container__primary-description")]';
     // '.artdeco-entity-lockup__subtitle > span',
     '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__subtitle")]/span[1]',
-    '//*[@role="button"]//div[1]/p[1]/span[2]/following::p[1]', // 08/14/2026
+    '//div[@role="button"]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/p[1]', // 08/14/2026 // ' • '
+    //*[@role="button"]//div[2]/p[1][not(contains(text()," · "))][not(contains(text(),"Saved"))][not(contains(text(),"Viewed"))][not(contains(text()," • "))]
   ];
   const locatorsJobLinks = [
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//a[contains(@class,"job-card-container__link")]',
@@ -483,14 +527,19 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
     '//li[not(contains(@class,"discovery-templates-entity-item"))]//*[@data-view-name="job-card"]//*[contains(@class,"artdeco-entity-lockup__caption")]', // '//ul[@class="scaffold-layout__list-container"]//*[@data-view-name="job-card"]/div[1]/div[1]/div[2]/div[3]/ul[1]/li[1]';
     // '.artdeco-entity-lockup__caption > ul > li',
     '//*[contains(@class,"jobs-search-pagination")]//preceding::*[contains(@class,"artdeco-entity-lockup__caption")]//ul/li',
-    '//*[@role="button"]//div[1]/p[1]/span[2]/following::p[2]', // 08/14/2026
+    '//div[@role="button"]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/p[1]', // 08/14/2026
   ];
   if (await isNoJobsFoundLinkedIn()) {
     return unfilteredJobsOnOnePage;
   }
+  // new UI https://www.linkedin.com/jobs/search-results/?keywords=QA%20Automation%20Engineer&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&start=1000&geoId=103644278
+  console.log(`find locatorJobNames`);
   const locatorJobNames = await getLocatorFromFew(locatorsJobNames);
+  console.log(`find locatorsJobCompanies`);
   const locatorJobCompanies = await getLocatorFromFew(locatorsJobCompanies);
+  console.log(`find locatorsJobLocations`);
   const locatorJobLocations = await getLocatorFromFew(locatorsJobLocations);
+  console.log(`find locatorsJobLinks`);
   const locatorJobLinks = await getLocatorFromFew(locatorsJobLinks);
   try {
     if (await page.locator(locatorJobNames).count() > 0) {
@@ -578,6 +627,12 @@ export async function linkedInGetAllUnfilteredJobsOnOnePage() {
     printToFileAndConsole(jobLinks);
     printToFileAndConsole('jobLocations size = ' + jobLocations.length);
     printToFileAndConsole(jobLocations);
+    printToFileAndConsole('ERROR - DIFFERENT SIZES FOR JOB NAMES, COMPANIES, LINKS and LOCATIONS');
+    printToFileAndConsole('jobNames size = ' + jobNames.length);
+    printToFileAndConsole('jobCompanies size = ' + jobCompanies.length);
+    printToFileAndConsole('jobLinks size = ' + jobLinks.length);
+    printToFileAndConsole('jobLocations size = ' + jobLocations.length);
+    expect(true).toBe(false);
     return unfilteredJobsOnOnePage;
   }
   for (let i = 0; i < jobNames.length; i++) {

@@ -19,11 +19,19 @@ export async function isElementPresent(locator) {
   return await getNumberOfElements(locator) > 0;
 }
 
-export async function isElementDisplayed(locator) {
-  const page = process.playwrightPage;
+export async function isElementDisplayed(locator, page) {
+  let browserTab = page;
+  if (!browserTab) {
+    browserTab = process.playwrightPage;
+  }
   let visibility = false;
-  if (await getNumberOfElements(locator) > 0) {
-    visibility = await (await page.locator(locator).first()).isVisible();
+  const elements = await browserTab.locator(locator).all();
+  // console.log(`${locator} - found ${elements.length} elements`);
+  for (let el of elements) {
+    visibility = await el.isVisible();
+    if (visibility) {
+      break;
+    }
   }
   return visibility;
 }
@@ -210,21 +218,24 @@ export async function isElementPresentWithIFrameRetry(locator) {
 
 export async function getLocatorFromFew(locators) {
   // console.log(`getLocatorFromFew:`);
-  // console.log(locators);
+  console.log(locators);
   const page = process.playwrightPage;
   for (let i = 0; i < locators.length; i++) {
     if (await page.locator(locators[i]).count() > 0) {
+      // console.log(`found: ${locators[i]}`);
       return locators[i];
     }
   }
   if (await page.locator(linkedinFiltersIFrame).count() > 0) {
     for (let i = 0; i < locators.length; i++) {
       if (await page.frameLocator(linkedinFiltersIFrame).locator(locators[i]).count() > 0) {
+        // console.log(`found: ${locators[i]}`);
         return locators[i];
       }
     }
   }
   if (await isNoJobsFoundLinkedIn()) {
+    // console.log(`no job found, returning locator 0: ${locators[0]}`);
     return locators[0];
   }
   expect(0, `no elements found = ${locators}`).toBeGreaterThan(0);
